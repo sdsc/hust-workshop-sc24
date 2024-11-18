@@ -1,4 +1,4 @@
-<img src="assets/images/logos/SDSClogo-plusname-red.jpg" style="float:right;" alt="SDSC Logo">
+<img src="assets/images/logos/SDSClogo-gold-blue.png" style="float:right;" alt="SDSC Logo">
 
 # Triton Shared Compute Cluster / HUST @ SC24
 
