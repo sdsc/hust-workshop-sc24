@@ -43,15 +43,16 @@ node_comma=$(echo ${node} | sed 's/ /,/g')
 IFS=',' read -a node <<< "$node_comma"
 #echo ${node[*]}
 
-# 2. Check the MCS label of each node, and only chooses those nodes labeled as “N/A”, or as the same group MCS label. 
+# 2. Get the MCS label of each node, and only choose nodes labeled as “N/A”, or as the same group MCS label when job was submitted to platinum or gold. 
  
 # get the MCS label of the group, which has the same name as allocation
 mcs_own=$(sacctmgr show assoc user=$USER format=Account | tail -n +3)
 # remove the leading and/or trailing spaces
 mcs_own=$(echo "$mcs_own" | xargs)
-# compare
 #echo ${mcs_own}
-for i in "${!node[@]}"; do
+# for jobs submitted to the platinum or gold partition, look for nodes labeled as N/A or as the same group MCS label
+if [[ ${partition} == "platinum" || ${partition} == "gold" ]]; then
+  for i in "${!node[@]}"; do
     mcs=$(scontrol show node ${node[$i]} | grep MCS | awk '{print $6}' | cut -d '=' -f 2)	
 #    echo ${mcs}
     if [[ ${mcs} == "N/A" || " $mcs_own " == *" $mcs "* ]]; then
@@ -64,8 +65,19 @@ for i in "${!node[@]}"; do
 # save available nodes separated by comma ","  
      node_mcs_comma="${node_mcs_comma}${delim}${node[$i]}"
      delim=","     
-    fi;
-done
+    fi
+  done
+# for jobs submitted to the condo or hotel partition, only look for nodes labeled as N/A  
+else
+  for i in "${!node[@]}"; do
+    mcs=$(scontrol show node ${node[$i]} | grep MCS | awk '{print $6}' | cut -d '=' -f 2)	 
+#    echo ${mcs}     
+    if [[ ${mcs} == "N/A" ]]; then
+     node_mcs_comma="${node_mcs_comma}${delim}${node[$i]}"
+     delim=","     
+    fi	 
+  done	   
+fi  
 #echo ${node_mcs_comma}
 # 3. Save the node name in array2, and then save the total number of CPU cores on each node into array3
 
