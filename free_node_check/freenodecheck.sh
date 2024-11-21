@@ -1,5 +1,7 @@
 #!/bin/bash
 # Written by Yuwu Chen at SDSC
+
+# 0. Arguments parse and check
 if [ "$#" -gt 2 ]; then
      echo "Error: too many arguments" && exit 0
 elif [ "$#" -lt 2 ]; then
@@ -31,8 +33,8 @@ for item in ${partition_array[@]}; do
 done
 
 #echo $partition $ask
-
-# grap all nodes available to accept jobs
+# 1. Obtain all nodes in the queried partition(s) that are available to accept jobs and save their hostnames into a bash array (“array1”). 
+# grep all nodes available to accept jobs
 node=$(sinfo -p ${partition} -l -N  | grep "idle \| mixed" | awk '{print $1}')
 node_comma=$(echo ${node} | sed 's/ /,/g')
 #echo $node_comma
@@ -41,10 +43,13 @@ node_comma=$(echo ${node} | sed 's/ /,/g')
 IFS=',' read -a node <<< "$node_comma"
 #echo ${node[*]}
 
-# get the mcs label of the group, which has the same name as allocation
+# 2. Check the MCS label of each node, and only chooses those nodes labeled as “N/A”, or as the same group MCS label. 
+ 
+# get the MCS label of the group, which has the same name as allocation
 mcs_own=$(sacctmgr show assoc user=$USER format=Account | tail -n +3)
 # remove the leading and/or trailing spaces
 mcs_own=$(echo "$mcs_own" | xargs)
+# compare
 #echo ${mcs_own}
 for i in "${!node[@]}"; do
     mcs=$(scontrol show node ${node[$i]} | grep MCS | awk '{print $6}' | cut -d '=' -f 2)	
@@ -56,22 +61,26 @@ for i in "${!node[@]}"; do
 #    else
 #      echo ${node[$i]};
 #      echo "Condition not met: mcs is '$mcs' and mcs_own is '$mcs_own'"
-# saved available nodes separated by comma ","  
+# save available nodes separated by comma ","  
      node_mcs_comma="${node_mcs_comma}${delim}${node[$i]}"
      delim=","     
     fi;
 done
 #echo ${node_mcs_comma}
-# create an array saving node name
+# 3. Save the node name in array2, and then save the total number of CPU cores on each node into array3
+
+# create an array saving node name, array2
 IFS=',' read -a node_mcs <<< "$node_mcs_comma"
-# create an array saving total cpu cores on each node
+# create an array saving total cpu cores on each node, array3
 mapfile -t total < <(scontrol show node ${node_mcs_comma}  | grep CfgTRES | cut -d ',' -f 1 | cut -d '=' -f 3)
 #echo ${total[*]}
 #echo ${#total[@]}
 
-# create an array saving allocated cpu cores on each node
+# 4. Create an array saving allocated cpu cores on each node ("array4")
 mapfile -t alloc < <(scontrol show node ${node_mcs_comma}  | grep AllocTRES | cut -d ',' -f 1 | cut -d '=' -f 3)
 #echo ${alloc[*]}
+
+# 5. Calculate available cores on each node by subtracting each element in array3 with the element in array4. 
 # set empty array elements to zero for the next calculation
 for i in "${!alloc[@]}"; do
     if [[ -z "${alloc[$i]}" ]]; then
@@ -87,6 +96,8 @@ for i in "${!total[@]}"; do
 done
 #echo ${#avail[@]}
 #echo ${avail[*]}
+# 6. Compare the cores needed with the free cores available on the node.
+# 7. If the number of free cores is equal or greater than the asked cores, then list the node name and the free CPUs.
 declare -i count=0
 echo "Below are the nodes that may fit your ${ask}-CPU job"
 echo "Nodename CPU Free:" 
