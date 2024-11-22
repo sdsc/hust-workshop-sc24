@@ -2,7 +2,7 @@
 
 ## Overview
 
-TBD
+The wrapper tscc_client is developed around multiple Slurm and our external accounting system’s related commands that can provide information about usage and available balance for Slurm bank accounts. 
 
 ## Content
 
@@ -14,29 +14,29 @@ TBD
 ### default query, no options
 
 ```
-TBD
+tscc_client
 ```
 
 ### query alternate user
 
 ```
-TBD
+tscc_client -u <username>
 ```
 
 ### query by Account (all users)
 
 ```
-TBD
+tscc_client -A <account>
 ```
 
 ### query by account (only users with usage)
 
 ```
-TBD
+tscc_client -A <account> -i
 ```
 
 ### query by regexp in Account description
 
 ```
-TBD
+tscc_client -d <description>
 ```
